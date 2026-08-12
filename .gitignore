@@ -13,7 +13,7 @@
 # 🔐 Secrets
 .env
 .env.*
-*.key
+*.key  
 *.pem
 
 # 💻 System files
