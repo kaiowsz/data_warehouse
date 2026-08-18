@@ -17,3 +17,6 @@
 
 -- Update priority roles mart
 .read 06_update_priority_mart.sql  
+
+-- Data Analysis on Data Marts
+.read 07_data_analysis.sql  

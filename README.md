@@ -1,6 +1,6 @@
 # Data Warehouse & Data Mart Build: Production ETL Pipeline
 
-An end-to-end Data Engineering pipeline built with **DuckDB** and **SQL**. It extracts job posting CSVs from Google Cloud Storage, models them into a Star Schema Data Warehouse, and builds specialized Data Marts with incremental update capabilities (`MERGE`).
+An end-to-end Data Engineering pipeline built with **DuckDB** and **SQL**. It extracts job posting CSVs from Google Cloud Storage, models them into a Star Schema Data Warehouse, builds specialized Data Marts with incremental update capabilities (`MERGE`), and delivers advanced business analytics.
 
 ![Data Pipeline Architecture](./images/1_2_Project2_Data_Pipeline.png)
 
@@ -14,6 +14,7 @@ An end-to-end Data Engineering pipeline built with **DuckDB** and **SQL**. It ex
   - **Flat Mart:** Denormalized table utilizing DuckDB nested types (`ARRAY_AGG` + `STRUCT_PACK`).
   - **Skills Mart:** Time-series skill demand tracking with additive metrics over time.
   - **Priority Mart:** Role snapshot with production-ready **incremental MERGE (Upsert)** updates (`WHEN MATCHED`, `WHEN NOT MATCHED`, `WHEN NOT MATCHED BY SOURCE`).
+- **Exploratory Data Analysis (EDA):** Business analytical queries answering market trends, salary distributions, and quarterly skill demands.
 - **Orchestration:** Idempotent, automated execution via master script `build_dw_marts.sql`.
 
 ---
@@ -21,7 +22,7 @@ An end-to-end Data Engineering pipeline built with **DuckDB** and **SQL**. It ex
 ## 🧰 Tech Stack
 
 - **Engine:** DuckDB (OLAP Database)
-- **Language:** SQL (DDL, DML, Advanced Window/Aggregate Functions, MERGE)
+- **Language:** SQL (DDL, DML, Window Functions, Nested Arrays/Structs, MERGE)
 - **Modeling:** Kimball Star Schema & Data Mart Architecture
 - **Cloud Storage:** Google Cloud Storage (Remote CSV Sources)
 
@@ -37,6 +38,7 @@ datawarehouse_pj/
 ├── 04_create_skills_mart.sql   # Skills Demand Time-Series Mart
 ├── 05_create_priority_mart.sql # Priority Roles Mart Initial Snapshot
 ├── 06_update_priority_mart.sql # Incremental MERGE (Upsert Pattern)
+├── 07_data_analysis.sql        # Exploratory & Analytical Business Queries
 ├── build_dw_marts.sql          # Master Orchestration Script
 └── images/                     # Architecture & Schema Diagrams
 ```
@@ -73,9 +75,22 @@ Tracks priority job roles and maintains a snapshot table (`priority_jobs_snapsho
 
 ---
 
+## 📊 Data Analysis & Business Insights (`07_data_analysis.sql`)
+
+The analytics script leverages the warehouse and marts to answer core business questions:
+
+1. **Top Demanded Skills:** Uses `UNNEST()` to unwrap nested skill structs and rank top technologies with average salary metrics.
+2. **Top Hiring Companies:** Aggregates hiring volume and salary offers per company for Data Engineering roles.
+3. **Salary Distribution Brackets:** Categorizes jobs into custom salary buckets (`CASE WHEN`) and calculates market percentage distribution.
+4. **Home Office vs. Presencial:** Evaluates remote vs. on-site salary differentials and market offer volume.
+5. **Top Paying Companies in Priority Roles:** Employs `DENSE_RANK() OVER (PARTITION BY job_title_short ORDER BY avg_salary DESC)` to rank top-paying employers per role.
+6. **Quarterly Skill Demand Trends:** Uses `PARTITION BY year_quarter` window functions on `skills_mart` to track top 5 quarterly technology shifts.
+
+---
+
 ## 🚀 How to Run
 
-Execute the complete ETL pipeline in a single command using DuckDB CLI:
+Execute the complete ETL pipeline and analytics in a single command using DuckDB CLI:
 
 ```bash
 duckdb dw_marts.duckdb -c ".read build_dw_marts.sql"
@@ -87,5 +102,6 @@ duckdb dw_marts.duckdb -c ".read build_dw_marts.sql"
 
 - **Idempotency:** All scripts use `DROP ... IF EXISTS` and `CREATE OR REPLACE` for safe re-runs.
 - **Many-to-Many Modeling:** Bridge tables (`skills_job_dim`) connecting fact and dimension tables.
-- **Modern SQL Features:** `ARRAY_AGG`, `STRUCT_PACK`, `DATE_TRUNC`, `EXTRACT`, `GROUP BY ALL`.
+- **Modern SQL Features:** `ARRAY_AGG`, `STRUCT_PACK`, `UNNEST`, `DATE_TRUNC`, `EXTRACT`, `GROUP BY ALL`.
+- **Advanced Window Functions:** `DENSE_RANK() OVER (PARTITION BY ... ORDER BY ...)`.
 - **Incremental Upserts:** Complete `MERGE` implementation with source/target matching logic.
